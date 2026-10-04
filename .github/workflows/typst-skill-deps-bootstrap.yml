@@ -1,0 +1,33 @@
+name: typst-skill-deps-bootstrap
+
+on:
+  push:
+    paths:
+      - ".github/workflows/typst-skill-deps-bootstrap.yml"
+
+jobs:
+  bundle-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Typst packages
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/typst/packages.git typst-packages
+          cd typst-packages
+          git sparse-checkout set packages/preview/zebra/0.1.0 packages/preview/ficons/0.1.0
+          cd ..
+          mkdir -p payload/packages/preview
+          cp -a typst-packages/packages/preview/zebra payload/packages/preview/
+          cp -a typst-packages/packages/preview/ficons payload/packages/preview/
+      - name: Fetch Atkinson Hyperlegible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-atkinson-hyperlegible
+          mkdir -p payload/fonts/atkinson
+          find /usr/share/fonts -type f \( -iname '*Atkinson*Hyperlegible*.ttf' -o -iname '*Atkinson*Hyperlegible*.otf' \) -exec cp {} payload/fonts/atkinson/ \;
+          cp /usr/share/doc/fonts-atkinson-hyperlegible/copyright payload/fonts/atkinson/COPYRIGHT
+      - name: Upload dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: typst-skill-deps
+          path: payload
+          retention-days: 1
